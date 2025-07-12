@@ -1,8 +1,12 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+android.buildFeatures.buildConfig = true
 
 android {
     namespace = "kzs.th000.curioushub"
@@ -19,12 +23,35 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+
+            val clientProperties = Properties()
+            clientProperties.load(project.rootProject.file("/app/client_dev.properties").reader())
+            val clientId = clientProperties.getProperty("ClientId")
+            val clientSecret = clientProperties.getProperty("ClientSecret")
+            buildConfigField("String", "CLIENT_ID", clientId)
+            buildConfigField("String", "CLIENT_SECRET", clientSecret)
+        }
+
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+
+            val clientProperties = Properties()
+            clientProperties.load(project.rootProject.file("/app/client.properties").reader())
+            val clientId = clientProperties.getProperty("ClientId")
+            val clientSecret = clientProperties.getProperty("ClientSecret")
+            buildConfigField("String", "CLIENT_ID", clientId)
+            buildConfigField("String", "CLIENT_SECRET", clientSecret)
         }
     }
     compileOptions {
