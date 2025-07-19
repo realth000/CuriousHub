@@ -2,6 +2,7 @@ package kzs.th000.curioushub.core.models
 
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 data class AppSettingsValue<T>(
@@ -20,11 +21,17 @@ data class AppSettingsValue<T>(
 
 abstract class AppSettings() {
     companion object {
-        val currentUser =
+        val currentUsername =
             AppSettingsValue<String>(
-                "currentUser",
-                value = stringPreferencesKey("currentUser"),
+                "currentUsername",
+                value = stringPreferencesKey("currentUsername"),
                 defaultValue = "",
+            )
+        val currentUid =
+            AppSettingsValue<Int>(
+                "currentUid",
+                value = intPreferencesKey("currentUid"),
+                defaultValue = -1,
             )
     }
 }

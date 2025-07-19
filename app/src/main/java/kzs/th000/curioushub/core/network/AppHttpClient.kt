@@ -3,9 +3,13 @@ package kzs.th000.curioushub.core.network
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
+import arrow.core.raise.catch
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.accept
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.statement.readRawBytes
@@ -13,13 +17,13 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kzs.th000.curioushub.core.constants.API_BASE_URL
 import kzs.th000.curioushub.core.constants.BASE_URL
+import kzs.th000.curioushub.core.exceptions.AppEither
+import kzs.th000.curioushub.core.exceptions.AppException
 
 data class AppUriParam(val key: String, val value: String)
 
@@ -39,55 +43,66 @@ class AppHttpClient {
         accept: ContentType = ContentType("application", "json"),
         headers: List<AppUriParam>? = null,
         authorization: String? = null,
-    ): JsonObject? {
+    ): AppEither<JsonObject> = either {
         val resp =
-            _client.post(target.toString()) {
+            _client.get(target.toString()) {
                 accept(accept)
                 headers?.forEach { it -> this.header(it.key, it.value) }
                 authorization?.let { header(HttpHeaders.Authorization, it) }
             }
 
-        if (resp.status != HttpStatusCode.OK) {
-            // TODO: Error handling.
+        ensure(resp.status == HttpStatusCode.OK) {
             Log.e("AppHttpClient::getJson", "response status code ${resp.status}")
-            return null
+            AppException.HttpRequestFailed(
+                method = "GET",
+                target = target,
+                statusCode = resp.status.value,
+            )
         }
 
-        return resp
-            .readRawBytes()
-            .decodeToString()
-            .let { it -> json.parseToJsonElement(it) }
-            .let { it ->
-                when (it) {
-                    is JsonArray,
-                    is JsonPrimitive,
-                    JsonNull -> null
-                    is JsonObject -> it
+        val json =
+            resp.readRawBytes().decodeToString().let { it ->
+                catch({ json.parseToJsonElement(it) }) { e: SerializationException ->
+                    raise(
+                        AppException.SerializationFailure(
+                            "failed to deserialize response of $target: ${e.message}"
+                        )
+                    )
                 }
             }
+
+        ensure(json is JsonObject) { raise(AppException.SerializationFailure("invalid data")) }
+        json
     }
 
-    suspend fun postJson(target: Uri, data: Map<String, String>? = null): JsonObject? {
-        val resp = _client.post(target.toString()) { accept(ContentType("application", "json")) }
+    suspend fun postJson(target: Uri, data: Map<String, String>? = null): AppEither<JsonObject> =
+        either {
+            val resp =
+                _client.post(target.toString()) { accept(ContentType("application", "json")) }
 
-        if (resp.status != HttpStatusCode.OK) {
-            // TODO: Error handling.
-            return null
+            ensure(resp.status == HttpStatusCode.OK) {
+                Log.e("AppHttpClient::postJson", "response status code ${resp.status}")
+                AppException.HttpRequestFailed(
+                    method = "POST",
+                    target = target,
+                    statusCode = resp.status.value,
+                )
+            }
+
+            val json =
+                resp.readRawBytes().decodeToString().let { it ->
+                    catch({ json.parseToJsonElement(it) }) { e: SerializationException ->
+                        raise(
+                            AppException.SerializationFailure(
+                                "failed to deserialize response of $target: ${e.message}"
+                            )
+                        )
+                    }
+                }
+
+            ensure(json is JsonObject) { raise(AppException.SerializationFailure("invalid data")) }
+            json
         }
-
-        return resp
-            .readRawBytes()
-            .decodeToString()
-            .let { it -> json.parseToJsonElement(it) }
-            .let { it ->
-                when (it) {
-                    is JsonArray,
-                    is JsonPrimitive,
-                    JsonNull -> null
-                    is JsonObject -> it
-                }
-            }
-    }
 
     companion object {
         fun buildGhTarget(

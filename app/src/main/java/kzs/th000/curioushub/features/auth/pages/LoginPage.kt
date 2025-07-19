@@ -1,6 +1,7 @@
 package kzs.th000.curioushub.features.auth.pages
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.Flow
 import kzs.th000.curioushub.BuildConfig
 import kzs.th000.curioushub.core.constants.AUTH_CODE_URI
 import kzs.th000.curioushub.core.constants.AUTH_TOKEN_URI
@@ -26,20 +26,16 @@ import kzs.th000.curioushub.core.network.AppHttpClient
 import kzs.th000.curioushub.core.network.AppUriParam
 import kzs.th000.curioushub.features.auth.events.LoginEvent
 import kzs.th000.curioushub.features.auth.state.LoginState
-import kzs.th000.curioushub.features.auth.viewmodel.LoginViewModel
-import java.util.logging.Logger
+import kzs.th000.curioushub.features.auth.view_model.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginPage(
-    currentUser: Flow<String?>,
     loginViewModel: LoginViewModel,
-    onLoginSuccess: ((String) -> Unit)? = null,
+    onLoginSuccess: (username: String, uid: Int) -> Unit,
     onLaunchUrl: ((Uri) -> Unit)? = null,
 ) {
     val state by loginViewModel.state.collectAsState()
-    val currentUser = currentUser.collectAsState(null)
-    Logger.getGlobal().info { "running page $state" }
 
     val processing =
         when (state) {
@@ -48,7 +44,7 @@ fun LoginPage(
             LoginState.LoadingToken,
             is LoginState.GotCode -> true
             is LoginState.Success -> false
-            LoginState.Failure -> false
+            is LoginState.Failure -> false
         }
 
     val tipText =
@@ -58,15 +54,16 @@ fun LoginPage(
             LoginState.LoadingToken,
             is LoginState.GotCode -> "Processing..."
             is LoginState.Success -> "Login success"
-            LoginState.Failure -> "Login failed"
+            is LoginState.Failure -> "Login failed"
         }
 
     LaunchedEffect(state) {
         when (state) {
             LoginState.Initial,
-            LoginState.LoadingToken,
-            is LoginState.Success,
-            LoginState.Failure -> Unit
+            LoginState.LoadingToken -> Unit
+            is LoginState.Failure ->
+                Log.e("LoginPage", "failed to login: ${(state as LoginState.Failure).error}")
+
             is LoginState.GotCode -> {
                 loginViewModel.onEvent(
                     LoginEvent.RequestToken(
@@ -89,24 +86,25 @@ fun LoginPage(
                     )
                 onLaunchUrl!!.invoke(targetUrl)
             }
+            is LoginState.Success -> {
+                val successState = state as LoginState.Success
+                onLoginSuccess.invoke(successState.username, successState.uid)
+            }
         }
     }
 
     val buttonCallback = {
         when (state) {
             LoginState.Initial,
-            LoginState.Failure ->
+            is LoginState.Failure ->
                 loginViewModel.onEvent(
                     LoginEvent.RequestCode(redirectUri = AUTH_CODE_URI, state = "debug_test")
                 )
-
             is LoginState.GotCode,
             LoginState.LoadingCode,
+            is LoginState.Success,
             LoginState.LoadingToken -> {
                 /* Do nothing */
-            }
-            is LoginState.Success -> {
-                onLoginSuccess!!.invoke((state as LoginState.Success).username)
             }
         }
     }
@@ -117,27 +115,22 @@ fun LoginPage(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (currentUser.value != null) {
-                Text("Hello $currentUser!\nWelcome to CuriousHub")
-            } else {
-                Text(tipText)
-                Button(enabled = !processing, onClick = buttonCallback) {
-                    when (state) {
-                        LoginState.Initial -> {
-                            Text("Login")
-                        }
-                        LoginState.LoadingCode,
-                        LoginState.LoadingToken,
-                        is LoginState.GotCode -> {
-
-                            CircularProgressIndicator()
-                        }
-                        is LoginState.Success -> {
-                            Text("continue")
-                        }
-                        LoginState.Failure -> {
-                            Text("Retry")
-                        }
+            Text(tipText)
+            Button(enabled = !processing, onClick = buttonCallback) {
+                when (state) {
+                    LoginState.Initial -> {
+                        Text("Login")
+                    }
+                    LoginState.LoadingCode,
+                    LoginState.LoadingToken,
+                    is LoginState.GotCode -> {
+                        CircularProgressIndicator()
+                    }
+                    is LoginState.Success -> {
+                        Text("continue")
+                    }
+                    is LoginState.Failure -> {
+                        Text("Retry")
                     }
                 }
             }

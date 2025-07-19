@@ -1,5 +1,7 @@
 package kzs.th000.curioushub.features.auth.state
 
+import kzs.th000.curioushub.core.exceptions.AppException
+
 /** All possible states when doing login process. */
 sealed interface LoginState {
     /** The initial state. */
@@ -26,6 +28,7 @@ sealed interface LoginState {
      * * https://docs.github.com/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app
      *
      * @param username Username of current user.
+     * @param uid User id of current user.
      * @param accessToken Server responded access token.
      * @param accessTokenExpireTime Timestamp access token expires.
      * @param refreshToken Server responded refresh token.
@@ -33,6 +36,7 @@ sealed interface LoginState {
      */
     data class Success(
         val username: String,
+        val uid: Int,
         val accessToken: String,
         val accessTokenExpireTime: Int,
         val refreshToken: String,
@@ -44,7 +48,7 @@ sealed interface LoginState {
     /**
      * Failed to login.
      *
-     * Currently we do not store any error info or error message.
+     * @param error Occurred error during login.
      */
-    object Failure : LoginState
+    data class Failure(val error: AppException) : LoginState
 }

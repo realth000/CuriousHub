@@ -15,6 +15,7 @@ ktor = "3.2.1"
 navigation-compose = "2.9.1"
 serialization = "1.9.0"
 datastore = "1.1.7"
+arrow = "2.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,9 @@ ktor-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "k
 nativation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
 ktx-ser-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+arrow-core = { group = "io.arrow-kt", name = "arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { group = "io.arrow-kt", name = "arrow-fx-coroutines", version.ref = "arrow" }
+arrow-ksp = { group = "io.arrow-kt", name = "arrow-optics-ksp-plugin", version.ref = "arrow" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

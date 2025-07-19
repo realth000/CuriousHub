@@ -21,10 +21,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import androidx.room.Room
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kzs.th000.curioushub.core.constants.AUTH_TOKEN_URI
 import kzs.th000.curioushub.core.models.AppSettings
@@ -32,7 +35,10 @@ import kzs.th000.curioushub.data.database.AppDatabase
 import kzs.th000.curioushub.features.auth.events.LoginEvent
 import kzs.th000.curioushub.features.auth.pages.LoginPage
 import kzs.th000.curioushub.features.auth.state.LoginState
-import kzs.th000.curioushub.features.auth.viewmodel.LoginViewModel
+import kzs.th000.curioushub.features.auth.view_model.LoginViewModel
+import kzs.th000.curioushub.features.profile.pages.CurrentUserProfilePage
+import kzs.th000.curioushub.features.profile.state.CurrentUserProfileState
+import kzs.th000.curioushub.features.profile.view_model.CurrentUserProfileViewModel
 
 // At the top level of your kotlin file:
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -55,8 +61,14 @@ class MainActivity : ComponentActivity() {
             }
         )
 
-    private val currentUser by lazy {
-        applicationContext.dataStore.data.map { pref -> AppSettings.currentUser.getOrNull(pref) }
+    private val currentUid by lazy {
+        applicationContext.dataStore.data.map { pref -> AppSettings.currentUid.getOrNull(pref) }
+    }
+
+    private val currentUsername by lazy {
+        applicationContext.dataStore.data.map { pref ->
+            AppSettings.currentUsername.getOrNull(pref)
+        }
     }
 
     override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
@@ -111,28 +123,56 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val uri = intent.data
-        Log.i("MainActivity::onCreate", ">>> get data: $uri ${this.hashCode()}")
+        val (username, uid) =
+            runBlocking(Dispatchers.Default) {
+                // Update login state.
+                val username = currentUsername.first()
+                val uid = currentUid.first()
+                Log.d("MainActivity::initCurrent", "current user: $username ($uid)")
+                return@runBlocking Pair(username, uid)
+            }
+
+        val initialRoute =
+            if (uid == null || username == null) {
+                LoginPageRoute
+            } else {
+                CurrentUserProfilePageRoute(username = username, uid)
+            }
 
         setContent {
             val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = LoginWelcomeParams) {
-                composable<LoginWelcomeParams> {
+            NavHost(navController = navController, startDestination = initialRoute) {
+                composable<LoginPageRoute> {
                     LoginPage(
-                        currentUser,
                         loginViewModel,
                         onLaunchUrl = { targetUri ->
                             val browserIntent = Intent(Intent.ACTION_VIEW, targetUri)
                             browserIntent.flags = FLAG_ACTIVITY_NEW_TASK
                             applicationContext.startActivity(browserIntent)
                         },
-                        onLoginSuccess = { username ->
+                        onLoginSuccess = { username, uid ->
                             lifecycleScope.launch {
+                                Log.d("UserLoginSuccess", "user login success: $username")
                                 dataStore.edit { settings ->
-                                    AppSettings.currentUser.update(settings, username)
+                                    AppSettings.currentUid.update(settings, uid)
+                                    AppSettings.currentUsername.update(settings, username)
                                 }
                             }
+                            navController.navigate(CurrentUserProfilePageRoute(username, uid))
                         },
+                    )
+                }
+                composable<CurrentUserProfilePageRoute> {
+                    val routeArgs = it.toRoute<CurrentUserProfilePageRoute>()
+                    CurrentUserProfilePage(
+                        viewModel =
+                            CurrentUserProfileViewModel(
+                                db.userDao,
+                                CurrentUserProfileState.Initial(
+                                    username = routeArgs.username,
+                                    uid = routeArgs.uid,
+                                ),
+                            )
                     )
                 }
 
@@ -183,19 +223,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Serializable object LoginWelcomeParams
+@Serializable object LoginPageRoute
 
-@Serializable
-data class LoginAuthCodeDeepLinkParam(
-    @SerialName("code") val code: String? = null,
-    @SerialName("state") val state: String? = null,
-)
-
-@Serializable
-data class LoginAuthTokenDeepLinkParam(
-    @SerialName("access_token") val accessToken: String? = null,
-    @SerialName("expires_in") val accessTokenExpireTime: Int? = null,
-    @SerialName("refresh_token") val refreshToken: String? = null,
-    @SerialName("refresh_token_expires_in") val refreshTokenExpireTime: Int? = null,
-    @SerialName("token_type") val tokenType: String? = null,
-)
+@Serializable data class CurrentUserProfilePageRoute(val username: String, val uid: Int)

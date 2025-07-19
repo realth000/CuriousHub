@@ -85,6 +85,8 @@ dependencies {
     implementation(libs.nativation.compose)
     implementation(libs.ktx.ser.json)
     implementation(libs.datastore)
+    implementation(libs.arrow.core)
+    implementation(libs.arrow.fx.coroutines)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -93,4 +95,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     ksp(libs.room.compiler)
+    ksp(libs.arrow.ksp)
 }
