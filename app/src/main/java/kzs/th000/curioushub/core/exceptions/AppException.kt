@@ -33,6 +33,15 @@ sealed class AppException(open val message: String? = null) {
     /** Failed to serialize or deserialize models. */
     data class SerializationFailure(override val message: String?) : AppException()
 
+    /** User token is invalid, maybe not found or expired. */
+    enum class InvalidUserToken() {
+        /** Token not found. */
+        NOT_FOUND,
+
+        /** Token is expired. */
+        EXPIRED,
+    }
+
     /**
      * Failed to do the first time login. At this time we do not know any user related information.
      */

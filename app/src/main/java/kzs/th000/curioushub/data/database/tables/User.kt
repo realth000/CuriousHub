@@ -7,6 +7,8 @@ import androidx.room.PrimaryKey
 data class User(
     @PrimaryKey val id: Int,
     val username: String?,
+    /** Timestamp of last time update access token in milliseconds. */
+    val accessTokenUpdateTime: Long,
     val accessToken: String,
     val accessTokenExpireTime: Int,
     val refreshToken: String,

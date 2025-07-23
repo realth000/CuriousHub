@@ -9,6 +9,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import kzs.th000.curioushub.BuildConfig
 import kzs.th000.curioushub.core.exceptions.AppEither
 import kzs.th000.curioushub.core.exceptions.AppException
 import kzs.th000.curioushub.core.models.AuthTokenSuccessModel
@@ -95,5 +96,34 @@ class GitHubHttpClient {
 
             json.decodeObjectOrRaise<UserProfileModel>(data).bind()
         }
+
+        suspend fun refreshAccessToken(refreshToken: String): AppEither<AuthTokenSuccessModel> =
+            either {
+                val target =
+                    AppHttpClient.buildGhTarget(
+                        paths = listOf("login", "oauth", "access_token"),
+                        queryParameters =
+                            listOf(
+                                AppUriParam("client_id", BuildConfig.CLIENT_ID),
+                                AppUriParam("client_secret", BuildConfig.CLIENT_SECRET),
+                                AppUriParam("grant_type", "refresh_token"),
+                                AppUriParam("refresh_token", refreshToken),
+                            ),
+                    )
+
+                val resp = AppHttpClient().postJson(target).bind()
+
+                ensure(!resp.keys.contains("error") && !resp.keys.contains("error_description")) {
+                    val error = resp["error_description"]?.toString()
+                    Log.e("GithubHttpClient::refreshAccessToken", "error found in resp: $error")
+                    raise(
+                        AppException.HttpServerRespondedAnError(
+                            error = "failed to get auth token: $error"
+                        )
+                    )
+                }
+
+                json.decodeObjectOrRaise<AuthTokenSuccessModel>(resp).bind()
+            }
     }
 }

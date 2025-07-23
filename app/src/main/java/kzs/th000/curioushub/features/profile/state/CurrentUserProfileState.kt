@@ -9,13 +9,13 @@ import kzs.th000.curioushub.core.models.UserProfileModel
  * @param username Current username.
  * @param uid Current user id.
  */
-sealed class CurrentUserProfileState(open val username: String, open val uid: Int) {
+sealed class CurrentUserProfileState(open val username: String? = "<unknown>", open val uid: Int) {
     /** The initial state. */
-    data class Initial(override val username: String, override val uid: Int) :
+    data class Initial(override val username: String?, override val uid: Int) :
         CurrentUserProfileState(username, uid)
 
     /** Loading profile data. */
-    data class Loading(override val username: String, override val uid: Int) :
+    data class Loading(override val username: String?, override val uid: Int) :
         CurrentUserProfileState(username, uid)
 
     /**
@@ -25,7 +25,7 @@ sealed class CurrentUserProfileState(open val username: String, open val uid: In
      */
     data class Failure(
         val error: AppException,
-        override val username: String,
+        override val username: String?,
         override val uid: Int,
     ) : CurrentUserProfileState(username, uid)
 

@@ -36,6 +36,7 @@ import kzs.th000.curioushub.features.auth.events.LoginEvent
 import kzs.th000.curioushub.features.auth.pages.LoginPage
 import kzs.th000.curioushub.features.auth.state.LoginState
 import kzs.th000.curioushub.features.auth.view_model.LoginViewModel
+import kzs.th000.curioushub.features.debug.DebugPage
 import kzs.th000.curioushub.features.profile.pages.CurrentUserProfilePage
 import kzs.th000.curioushub.features.profile.state.CurrentUserProfileState
 import kzs.th000.curioushub.features.profile.view_model.CurrentUserProfileViewModel
@@ -123,6 +124,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        if (BuildConfig.DEBUG) {
+            Log.i("debug", "force open database")
+            lifecycleScope.launch { db.userDao.getAllUsers().first() }
+        }
+
         val (username, uid) =
             runBlocking(Dispatchers.Default) {
                 // Update login state.
@@ -176,48 +182,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // composable<LoginAuthTokenDeepLinkParam>(
-                //     deepLinks =
-                //         listOf(navDeepLink<LoginAuthTokenDeepLinkParam>(basePath =
-                // AUTH_TOKEN_URI))
-                // ) {
-                //     val params = it.toRoute<LoginAuthTokenDeepLinkParam>()
-                //     setContent {
-                //         LoginPage(
-                //             LoginViewModel(
-                //                 db.userDao,
-                //                 LoginState.Success(
-                //                     accessToken = params.accessToken!!,
-                //                     accessTokenExpireTime = params.accessTokenExpireTime!!,
-                //                     refreshToken = params.refreshToken!!,
-                //                     refreshTokenExpireTime = params.refreshTokenExpireTime!!,
-                //                     tokenType = params.tokenType!!,
-                //                 ),
-                //             ),
-                //             onLoginSuccess = {
-                //                 /* On login success */
-                //                 finishActivity(0)
-                //             },
-                //         )
-                //     }
-                // }
-
-                // composable<LoginAuthCodeDeepLinkParam>(
-                //     deepLinks =
-                //         listOf(navDeepLink<LoginAuthCodeDeepLinkParam>(basePath = AUTH_CODE_URI))
-                // ) {
-                //     val params = it.toRoute<LoginAuthCodeDeepLinkParam>()
-                //     LoginPage(
-                //         LoginViewModel(
-                //             db.userDao,
-                //             LoginState.GotCode(code = params.code!!, state = params.state!!),
-                //         ),
-                //         onLoginSuccess = {
-                //             /* On login success */
-                //             finishActivity(0)
-                //         },
-                //     )
-                // }
+                if (BuildConfig.DEBUG) {
+                    composable<DebugPageRoute> { DebugPage(db, dataStore) }
+                }
             }
         }
     }
@@ -226,3 +193,5 @@ class MainActivity : ComponentActivity() {
 @Serializable object LoginPageRoute
 
 @Serializable data class CurrentUserProfilePageRoute(val username: String, val uid: Int)
+
+@Serializable object DebugPageRoute

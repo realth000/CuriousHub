@@ -9,9 +9,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import kzs.th000.curioushub.features.profile.events.CurrentUserProfileEvent
 import kzs.th000.curioushub.features.profile.state.CurrentUserProfileState
 import kzs.th000.curioushub.features.profile.view_model.CurrentUserProfileViewModel
 
@@ -19,6 +21,18 @@ import kzs.th000.curioushub.features.profile.view_model.CurrentUserProfileViewMo
 @Composable
 fun CurrentUserProfilePage(viewModel: CurrentUserProfileViewModel) {
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(state) {
+        when (state) {
+            is CurrentUserProfileState.Initial -> {
+                // Verify token status by loading profile data.
+                viewModel.onEvent(CurrentUserProfileEvent.FetchProfile)
+            }
+            is CurrentUserProfileState.Loading -> /*  Do nothing */ Unit
+            is CurrentUserProfileState.Failure -> /*  Do nothing */ Unit
+            is CurrentUserProfileState.Success -> /*  Do nothing */ Unit
+        }
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Profile") }) }) { innerPadding ->
         Column(modifier = Modifier.fillMaxWidth().padding(innerPadding)) {

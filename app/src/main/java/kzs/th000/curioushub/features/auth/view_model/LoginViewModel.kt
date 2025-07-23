@@ -72,9 +72,10 @@ class LoginViewModel(private val userDao: UserDao, private val initialState: Log
 
                     val userProfile = GitHubHttpClient.getCurrentUserInfo(token.accessToken).bind()
 
-                    userDao.insertUser(
+                    userDao.upsertUser(
                         User(
                             id = userProfile.id,
+                            accessTokenUpdateTime = System.currentTimeMillis(),
                             username = userProfile.login,
                             accessToken = token.accessToken,
                             accessTokenExpireTime = token.accessTokenExpireTime,

@@ -9,7 +9,7 @@ import kzs.th000.curioushub.data.database.tables.User
 
 @Dao
 interface UserDao {
-    @Upsert suspend fun insertUser(user: User)
+    @Upsert suspend fun upsertUser(user: User)
 
     @Delete suspend fun deleteUser(user: User)
 
@@ -17,4 +17,6 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE username==:username LIMIT 1")
     suspend fun getUserByName(username: String): User?
+
+    @Query("SELECT * FROM users WHERE id==:uid LIMIT 1") suspend fun getUserByUid(uid: Int): User?
 }
