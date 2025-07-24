@@ -3,6 +3,7 @@ package kzs.th000.curioushub.features.profile.pages
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -19,7 +20,10 @@ import kzs.th000.curioushub.features.profile.view_model.CurrentUserProfileViewMo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrentUserProfilePage(viewModel: CurrentUserProfileViewModel) {
+fun CurrentUserProfilePage(
+    viewModel: CurrentUserProfileViewModel,
+    onFetchProfileFailed: () -> Unit,
+) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(state) {
@@ -40,6 +44,7 @@ fun CurrentUserProfilePage(viewModel: CurrentUserProfileViewModel) {
                 is CurrentUserProfileState.Failure -> {
                     val error = (state as CurrentUserProfileState.Failure).error
                     Text("failed to login: $error")
+                    Button(onClick = onFetchProfileFailed) { Text("Login again") }
                 }
                 is CurrentUserProfileState.Initial,
                 is CurrentUserProfileState.Loading -> {

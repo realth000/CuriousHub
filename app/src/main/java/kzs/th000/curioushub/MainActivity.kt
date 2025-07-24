@@ -178,7 +178,8 @@ class MainActivity : ComponentActivity() {
                                     username = routeArgs.username,
                                     uid = routeArgs.uid,
                                 ),
-                            )
+                            ),
+                        onFetchProfileFailed = { navController.navigate(LoginPageRoute) },
                     )
                 }
 

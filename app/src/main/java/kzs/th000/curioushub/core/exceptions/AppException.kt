@@ -34,12 +34,12 @@ sealed class AppException(open val message: String? = null) {
     data class SerializationFailure(override val message: String?) : AppException()
 
     /** User token is invalid, maybe not found or expired. */
-    enum class InvalidUserToken() {
+    sealed class InvalidUserToken : AppException() {
         /** Token not found. */
-        NOT_FOUND,
+        object NotFound : InvalidUserToken()
 
         /** Token is expired. */
-        EXPIRED,
+        object Expired : InvalidUserToken()
     }
 
     /**

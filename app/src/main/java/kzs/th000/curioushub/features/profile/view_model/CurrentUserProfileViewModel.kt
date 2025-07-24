@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import arrow.core.handleErrorWith
 import arrow.core.left
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,11 +35,11 @@ class CurrentUserProfileViewModel(
 
     private fun onFetchProfile() =
         viewModelScope.launch {
+            val username = _state.value.username
+            val uid = _state.value.uid
             either {
-                val currentUser =
-                    userDao.getUserByUid(_state.value.uid)
-                        ?: raise(AppException.InvalidUserToken.NOT_FOUND)
-                val userProfile =
+                    val currentUser = userDao.getUserByUid(uid)
+                    ensure(currentUser != null) { raise(AppException.InvalidUserToken.NotFound) }
                     GitHubHttpClient.getCurrentUserInfo(currentUser.accessToken)
                         .handleErrorWith { it ->
                             if (
@@ -62,18 +63,10 @@ class CurrentUserProfileViewModel(
                                 it.left()
                             }
                         }
-                        .mapLeft { error ->
-                            _state.emit(
-                                CurrentUserProfileState.Failure(
-                                    error,
-                                    username = currentUser.username,
-                                    uid = currentUser.id,
-                                )
-                            )
-                        }
                         .bind()
-                _state.emit(CurrentUserProfileState.Success(userProfile))
-            }
+                }
+                .onLeft { it -> _state.emit(CurrentUserProfileState.Failure(it, username, uid)) }
+                .onRight { it -> _state.emit(CurrentUserProfileState.Success(it)) }
         }
 
     private suspend fun refreshAccessToken(refreshToken: String) =
