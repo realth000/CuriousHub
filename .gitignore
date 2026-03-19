@@ -1,3 +1,27 @@
+# Ignore drift generated files
+schema_versions.dart
+/test/data/generated_migrations/*.dart
+/packages/*/build/
+/packages/*/.dart_tool
+# Flutter android debug symbol build dir since 3.29
+/packages/*/android/app/.cxx
+/packages/*/android/build
+
+*.bak
+
+# Not bundle drift web artifacts
+/web/drift_worker.dart.js
+/web/sqlite3.debug.wasm
+/web/sqlite3.wasm
+
+# Genetated files
+generated
+*.g.dart
+*.mapper.dart
+*.freezed.dart
+
+# Devtools
+/devtools_options.yaml
 # Miscellaneous
 *.class
 *.log

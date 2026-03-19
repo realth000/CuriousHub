@@ -1,0 +1,6 @@
+targets:
+  $default:
+    builders:
+      gitsumu|info:
+        generate_for:
+          - lib/utils/git_info.dart

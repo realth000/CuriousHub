@@ -1,10 +1,8 @@
-name: curious_hub
+name: curious_hub_app
+version: 0.0.1+1
 description: "Yet another GitHub client"
 publish_to: "none"
-version: 0.0.1+1
-
-workspace:
-  - packages/*
+resolution: workspace
 
 environment:
   flutter: ">=3.41.4"
@@ -12,6 +10,8 @@ environment:
 
 dependencies:
   auto_route: ^11.1.0
+  curious_hub_core: ^0.0.1
+  curious_hub_i18n: ^0.0.1
   dio: ^5.9.2
   drift: ^2.31.0
   drift_dev: ^2.31.0
@@ -49,19 +49,11 @@ dev_dependencies:
     sdk: flutter
   freezed: ^3.2.3
   json_serializable: ^6.11.2
-  melos: ^7.4.1
   pyramid_lint: ^2.4.0
   riverpod_generator: ^4.0.0+1
   riverpod_lint: ^3.1.0
   slang_build_runner: ^4.14.0
   very_good_analysis: ^10.2.0
 
-
-melos:
-  scripts:
-    generate:
-      run: melos exec --depends-on="build_runner" -- "dart run build_runner build -d"
-      description: "Run build_runner for all packages"
-
-    clean:all:
-      run: melos exec -- "flutter clean"
+flutter:
+  uses-material-design: true

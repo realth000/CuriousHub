@@ -1,0 +1,14 @@
+name: curious_hub_core
+version: 0.0.1+1
+resolution: workspace
+
+environment:
+  flutter: ">=3.41.4"
+  sdk: ^3.11.1
+
+dependencies:
+  flex_color_scheme: ^8.4.0
+  flutter:
+    sdk: flutter
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0

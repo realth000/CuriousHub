@@ -1,0 +1,9 @@
+name: curious_hub_i18n
+version: 0.0.1+1
+resolution: workspace
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  slang: ^4.14.0

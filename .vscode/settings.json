@@ -1,0 +1,13 @@
+{
+  "dart.projectSearchThreshold": 100,
+  "dart.analysisExcludedFolders": [
+    "**/build/**",
+    "**/generated/**",
+    "**/.dart_tool/**",
+    "**/.git/**",
+    "**/.g.dart",
+    "**/.freezed.dart"
+  ],
+  "dart.previewSdkControl": true,
+  "dart.onlyAnalyzeProjectsWithOpenFiles": false
+}
